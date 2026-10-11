@@ -28,7 +28,7 @@ export default function AddTradePage() {
   return (
     <div className="animate-fade-rise">
       <header className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-white">Add Trade</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Add Trade</h1>
         <p className="mt-1 text-sm text-neutral-500">
           Log a completed backtested trade. Actual R, planned R:R and outcome are computed automatically by the server.
         </p>
@@ -37,7 +37,7 @@ export default function AddTradePage() {
       <ErrorBanner message={error} />
 
       {saved && (
-        <div className="mb-6 flex items-center gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-300">
+        <div className="mb-6 flex items-center gap-2 rounded-xl border border-emerald-600/25 bg-emerald-600/10 px-4 py-3 text-sm text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-300">
           <CheckCircle2 size={18} className="shrink-0" />
           Trade saved — redirecting to Trade History…
         </div>

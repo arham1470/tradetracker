@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Download, Eye, Filter, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import { tradeApi, toErrorMessage } from '../services/api.js';
 import { Card, EmptyState, ErrorBanner, Spinner } from '../components/ui.jsx';
 import { INSTRUMENTS, OUTCOMES } from '../constants/index.js';
 import { TradeForm } from '../components/TradeForm.jsx';
+import { useBalance } from '../balance/BalanceContext.jsx';
+import { computeAccountEquity } from '../utils/account.js';
+import { formatMoney } from '../utils/format.js';
 
 /**
  * Trade History — searchable, filterable, sortable, paginated table with
@@ -46,6 +49,27 @@ export default function TradeHistoryPage() {
       setLoading(false);
     }
   }, [page, pageSize, sort, order, filters]);
+
+  const { startingBalance, riskPercent } = useBalance();
+
+  // All trades (uncapped, like the Dashboard does) — used to compute the
+  // running balance / P&L per trade so the money columns are correct even
+  // when the table is paginated or filtered.
+  const [allBalanceTrades, setAllBalanceTrades] = useState([]);
+
+  useEffect(() => {
+    tradeApi
+      .getTrades({ limit: 1000, sort: 'tradeDate', order: 'asc' })
+      .then((res) => setAllBalanceTrades(res.data.trades))
+      .catch(() => {});
+  }, []);
+
+  const equity = useMemo(
+    () => computeAccountEquity(allBalanceTrades, { startingBalance, riskPercent }),
+    [allBalanceTrades, startingBalance, riskPercent]
+  );
+
+  const equityEnabled = equity.enabled && equity.tradesCounted > 0;
 
   // Strategy list for the filter dropdown (loaded once).
   useEffect(() => {
@@ -113,7 +137,7 @@ async function handleExport() {
     <div className="animate-fade-rise space-y-5">
       <header className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white">Trade History</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Trade History</h1>
           <p className="mt-1 text-sm text-neutral-500">
             {pagination.total} closed trade{pagination.total === 1 ? '' : 's'} on record
           </p>
@@ -158,6 +182,8 @@ async function handleExport() {
             onView={setViewing}
             onEdit={setEditing}
             onDelete={setDeleting}
+            equity={equity}
+            equityEnabled={equityEnabled}
           />
         )}
 
@@ -178,6 +204,8 @@ async function handleExport() {
           trade={viewing}
           onClose={() => setViewing(null)}
           onEdit={() => { setEditing(viewing); setViewing(null); }}
+          equity={equity}
+          equityEnabled={equityEnabled}
         />
       )}
       {editing && (
@@ -288,7 +316,7 @@ function rText(value) {
   return `${num > 0 ? '+' : ''}${num.toFixed(2)}R`;
 }
 /** Trades table with sortable headers and action buttons. */
-function TradesTable({ trades, sort, order, onSort, onView, onEdit, onDelete }) {
+function TradesTable({ trades, sort, order, onSort, onView, onEdit, onDelete, equity, equityEnabled }) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[920px] border-collapse">
@@ -303,7 +331,13 @@ function TradesTable({ trades, sort, order, onSort, onView, onEdit, onDelete }) 
             <th className="th text-right">SL</th>
             <th className="th text-right">Exit</th>
             <th className="th">Outcome</th>
-            <SortableTh label="Actual R" field="actualR" align="right" sort={sort} order={order} onSort={onSort} />
+            <SortableTh label="Actual R" field="actualR" sort={sort} order={order} onSort={onSort} align="right" />
+            {equityEnabled && (
+              <>
+                <th className="th text-right">P&L ($)</th>
+                <th className="th text-right">Balance</th>
+              </>
+            )}
             <th className="th text-right">Actions</th>
           </tr>
         </thead>
@@ -312,6 +346,7 @@ function TradesTable({ trades, sort, order, onSort, onView, onEdit, onDelete }) 
             <TradeRow
               key={tradeId(trade)}
               trade={trade}
+              equity={equityEnabled ? equity.perTrade.get(String(tradeId(trade))) : null}
               onView={() => onView(trade)}
               onEdit={() => onEdit(trade)}
               onDelete={() => onDelete(trade)}
@@ -336,14 +371,14 @@ function SortableTh({ label, field, sort, order, onSort, align = 'left' }) {
   );
 }
 
-function TradeRow({ trade, onView, onEdit, onDelete }) {
+function TradeRow({ trade, equity, onView, onEdit, onDelete }) {
   const r = Number(trade.actualR);
   const rowClass = r > 0 ? 'bg-positive/4' : r < 0 ? 'bg-negative/4' : '';
 
   return (
     <tr className={`transition-colors hover:bg-surface-alt ${rowClass}`}>
       <td className="td whitespace-nowrap text-neutral-400">{tradeDateStr(trade)}</td>
-      <td className="td whitespace-nowrap font-medium text-white">
+      <td className="td whitespace-nowrap font-medium text-foreground">
         {trade.instrument}
         {trade.isDemo && <DemoBadgeInline />}
       </td>
@@ -359,6 +394,16 @@ function TradeRow({ trade, onView, onEdit, onDelete }) {
       <td className={`td whitespace-nowrap text-right font-mono font-semibold ${r > 0 ? 'text-positive' : r < 0 ? 'text-negative' : 'text-neutral-400'}`}>
         {rText(trade.actualR)}
       </td>
+      {equity && (
+        <>
+          <td className={`td whitespace-nowrap text-right font-mono font-semibold ${equity.pnl > 0 ? 'text-positive' : equity.pnl < 0 ? 'text-negative' : 'text-neutral-400'}`}>
+            {formatMoney(equity.pnl, { showSign: true })}
+          </td>
+          <td className="td whitespace-nowrap text-right font-mono text-neutral-300">
+            {formatMoney(equity.balanceAfter)}
+          </td>
+        </>
+      )}
       <td className="td">
         <div className="flex items-center justify-end gap-1">
           <button type="button" onClick={onView} className="btn-secondary btn-sm" title="View details">
@@ -380,13 +425,13 @@ function TradeRow({ trade, onView, onEdit, onDelete }) {
 }
 
 function DemoBadgeInline() {
-  return <span className="ml-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 px-1.5 py-px text-[10px] font-medium text-amber-400">demo</span>;
+  return <span className="ml-1.5 rounded-full border border-amber-600/30 bg-amber-600/10 px-1.5 py-px text-[10px] font-medium text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400">demo</span>;
 }
 
 function DirectionPill({ direction }) {
   const isBuy = direction === 'BUY';
   return (
-    <span className={`chip ${isBuy ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400' : 'border-red-500/25 bg-red-500/10 text-red-400'}`}>
+    <span className={`chip ${isBuy ? 'border-emerald-600/25 bg-emerald-600/10 text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-400' : 'border-red-600/25 bg-red-600/10 text-red-700 dark:border-red-500/25 dark:bg-red-500/10 dark:text-red-400'}`}>
       {isBuy ? '▲ Buy' : '▼ Sell'}
     </span>
   );
@@ -394,9 +439,9 @@ function DirectionPill({ direction }) {
 
 function OutcomePill({ outcome }) {
   const styles = {
-    WIN: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400',
-    LOSS: 'border-red-500/25 bg-red-500/10 text-red-400',
-    BREAKEVEN: 'border-neutral-500/25 bg-neutral-500/10 text-neutral-400',
+    WIN: 'border-emerald-600/25 bg-emerald-600/10 text-emerald-700 dark:border-emerald-500/25 dark:bg-emerald-500/10 dark:text-emerald-400',
+    LOSS: 'border-red-600/25 bg-red-600/10 text-red-700 dark:border-red-500/25 dark:bg-red-500/10 dark:text-red-400',
+    BREAKEVEN: 'border-neutral-500/25 bg-neutral-500/10 text-neutral-500',
   };
   const labels = { WIN: 'Win', LOSS: 'Loss', BREAKEVEN: 'Breakeven' };
   return <span className={`chip ${styles[outcome] || styles.BREAKEVEN}`}>{labels[outcome] || outcome || '—'}</span>;
@@ -433,15 +478,16 @@ function PaginationBar({ page, pages, total, pageSize, onPageChange, onPageSizeC
 
 const SESSION_LABELS = { ASIA: 'Asian', LONDON: 'London', NEW_YORK: 'New York', OTHER: 'Other' };
 
-function TradeDetailModal({ trade, onClose, onEdit }) {
+function TradeDetailModal({ trade, onClose, onEdit, equity, equityEnabled }) {
   const r = Number(trade.actualR);
+  const perTrade = equityEnabled ? equity?.perTrade.get(String(tradeId(trade))) : null;
   return (
     <ModalShell onClose={onClose} title={trade.instrument}>
       <div className="space-y-5">
         <div className="flex flex-wrap items-center gap-3">
           <DirectionPill direction={trade.direction} />
           <OutcomePill outcome={trade.outcome} />
-          {trade.isDemo && <span className="chip border-amber-500/30 bg-amber-500/10 text-amber-400">Demo</span>}
+          {trade.isDemo && <span className="chip border-amber-600/30 bg-amber-600/10 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400">Demo</span>}
           <span className="text-sm text-neutral-400">{tradeDateStr(trade)}</span>
         </div>
 
@@ -459,10 +505,18 @@ function TradeDetailModal({ trade, onClose, onEdit }) {
           <Detail label="Planned R:R" value={trade.plannedRR == null ? 'N/A' : `${trade.plannedRR} : 1`} mono />
         </div>
 
+        {perTrade && (
+          <div className="grid grid-cols-3 gap-3 rounded-lg border border-border bg-surface-alt/40 p-3 text-sm">
+            <div><p className="text-xs text-neutral-500">P&L ($)</p><p className={`mt-0.5 font-mono font-semibold ${perTrade.pnl > 0 ? 'text-positive' : perTrade.pnl < 0 ? 'text-negative' : 'text-neutral-400'}`}>{formatMoney(perTrade.pnl, { showSign: true })}</p></div>
+            <div><p className="text-xs text-neutral-500">Balance after</p><p className="mt-0.5 font-mono font-semibold text-foreground">{formatMoney(perTrade.balanceAfter)}</p></div>
+            <div><p className="text-xs text-neutral-500">Risk used</p><p className="mt-0.5 font-mono font-semibold text-neutral-400">{formatMoney(perTrade.riskAmount)}</p></div>
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-3 rounded-lg border border-border bg-surface-alt/40 p-3 text-sm sm:grid-cols-4">
-          <div><p className="text-xs text-neutral-500">Strategy</p><p className="mt-0.5 font-medium text-white">{trade.strategy || '—'}</p></div>
-          <div><p className="text-xs text-neutral-500">Timeframe</p><p className="mt-0.5 font-medium text-white">{trade.timeframe || '—'}</p></div>
-          <div><p className="text-xs text-neutral-500">Session</p><p className="mt-0.5 font-medium text-white">{SESSION_LABELS[trade.session] || trade.session || '—'}</p></div>
+          <div><p className="text-xs text-neutral-500">Strategy</p><p className="mt-0.5 font-medium text-foreground">{trade.strategy || '—'}</p></div>
+          <div><p className="text-xs text-neutral-500">Timeframe</p><p className="mt-0.5 font-medium text-foreground">{trade.timeframe || '—'}</p></div>
+          <div><p className="text-xs text-neutral-500">Session</p><p className="mt-0.5 font-medium text-foreground">{SESSION_LABELS[trade.session] || trade.session || '—'}</p></div>
           <div><p className="text-xs text-neutral-500">Created</p><p className="mt-0.5 font-medium text-neutral-300">{trade.createdAt ? new Date(trade.createdAt).toLocaleDateString() : '—'}</p></div>
         </div>
 
@@ -498,7 +552,7 @@ function Detail({ label, value, mono, highlight }) {
   return (
     <div>
       <p className="label">{label}</p>
-      <p className={`font-medium text-white ${mono ? 'font-mono' : ''} ${highlight || ''}`}>{value}</p>
+      <p className={`font-medium text-foreground ${mono ? 'font-mono' : ''} ${highlight || ''}`}>{value}</p>
     </div>
   );
 }
@@ -538,7 +592,7 @@ function DeleteModal({ trade, deletingState, onCancel, onConfirm }) {
   return (
     <ModalShell onClose={onCancel} title="Delete trade" danger>
       <p className="text-sm text-neutral-300">
-        Are you sure you want to delete this <strong className="text-white">{trade.direction}</strong>{' '}
+        Are you sure you want to delete this <strong className="text-foreground">{trade.direction}</strong>{' '}
         {trade.instrument} trade from <strong className="text-neutral-200">{tradeDateStr(trade)}</strong>?
       </p>
       <p className="mt-2 text-xs text-neutral-500">
@@ -580,8 +634,8 @@ function ModalShell({ onClose, title, danger, children }) {
           onClick={(e) => e.stopPropagation()}
         >
           <div className="mb-5 flex items-center justify-between">
-            <h2 className={`text-lg font-semibold ${danger ? 'text-red-400' : 'text-white'}`}>{title}</h2>
-            <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-neutral-400 hover:bg-surface-alt hover:text-white" aria-label="Close">
+            <h2 className={`text-lg font-semibold ${danger ? 'text-red-600 dark:text-red-400' : 'text-foreground'}`}>{title}</h2>
+            <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-neutral-400 hover:bg-surface-alt hover:text-foreground" aria-label="Close">
               <X size={18} />
             </button>
           </div>

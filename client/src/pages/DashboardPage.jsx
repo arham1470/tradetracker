@@ -4,7 +4,8 @@ import { Plus, TrendingUp } from 'lucide-react';
 import { analyticsApi, tradeApi, toErrorMessage } from '../services/api.js';
 import FilterBar from '../components/FilterBar.jsx';
 import { Card, EmptyState, ErrorBanner, Spinner } from '../components/ui.jsx';
-import { HorizontalRBar, MonthlyChart, OutcomeDonut, REquityChart, StatCard } from '../components/charts.jsx';
+import { HorizontalRBar, MonthlyChart, OutcomeDonut, REquityChart, StatCard, useChartTheme, COLORS } from '../components/charts.jsx';
+import AccountBalanceCard from '../components/AccountBalanceCard.jsx';
 import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { formatNumber, formatPercent, formatR, signClass } from '../utils/format.js';
 import { datasetSlice } from '../utils/datasets.js';
@@ -97,14 +98,17 @@ export default function DashboardPage() {
           </div>
         </Card>
       ) : (
-        <DashboardContent stats={stats} sliced={sliced} />
+        <DashboardContent stats={stats} sliced={sliced} allTrades={allTrades} />
       )}
     </div>
   );
 }
-function DashboardContent({ stats, sliced }) {
+function DashboardContent({ stats, sliced, allTrades }) {
   return (
     <>
+      {/* Account balance + P&L — computed across the full trade log, not the filtered view */}
+      <AccountBalanceCard trades={allTrades} />
+
       {/* Headline metric cards */}
       <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <StatCard label="Total closed trades" value={formatNumber(stats.totalTrades, 0)} sub={stats.demoTrades ? `${stats.demoTrades} demo seeded` : null} />
@@ -112,7 +116,7 @@ function DashboardContent({ stats, sliced }) {
           label="Win rate"
           value={formatPercent(stats.winRate)}
           sub={`${stats.winningTrades}W · ${stats.losingTrades}L · ${stats.breakevenTrades}BE`}
-          accent={Number(stats.winRate) >= 50 ? 'text-positive' : 'text-white'}
+          accent={Number(stats.winRate) >= 50 ? 'text-positive' : 'text-foreground'}
         />
         <StatCard
           label="Net performance"
@@ -134,7 +138,7 @@ function DashboardContent({ stats, sliced }) {
       <Card>
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-white">Cumulative R equity curve</h2>
+            <h2 className="text-sm font-semibold text-foreground">Cumulative R equity curve</h2>
             <p className="mt-0.5 text-xs text-neutral-500">Net R across the {sliced.length} trades in view</p>
           </div>
           <span className="chip border-accent/30 bg-accent/10 text-accent">
@@ -180,7 +184,7 @@ function PageHeader({ filters, onFilters, loading, lastRefreshed }) {
   return (
     <header className="mb-6 flex flex-wrap items-center justify-between gap-4">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">Dashboard</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Dashboard</h1>
         <p className="mt-1 text-sm text-neutral-500">
           {lastRefreshed ? `Updated ${lastRefreshed.toLocaleTimeString()}` : 'Your backtest performance at a glance'}
         </p>
@@ -202,7 +206,7 @@ function PageHeader({ filters, onFilters, loading, lastRefreshed }) {
 function CardTitle({ title, subtitle }) {
   return (
     <div className="mb-4">
-      <h2 className="text-sm font-semibold text-white">{title}</h2>
+      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
       <p className="mt-0.5 text-xs text-neutral-500">{subtitle}</p>
     </div>
   );
@@ -246,6 +250,7 @@ function slicedStrategies(trades) {
 
 /** Win rate grouped by timeframe — a small bar chart with accurate colors. */
 function WinRateByTimeframe({ trades }) {
+  const chart = useChartTheme();
   const rows = useMemo(() => {
     const byTf = new Map();
     for (const trade of trades) {
@@ -272,13 +277,13 @@ function WinRateByTimeframe({ trades }) {
   return (
     <ResponsiveContainer width="100%" height={Math.max(160, rows.length * 36)}>
       <BarChart data={rows} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 4 }}>
-        <CartesianGrid stroke="rgba(148,163,184,0.08)" horizontal={false} />
-        <XAxis type="number" domain={[0, 100]} tick={{ fill: '#6b7280', fontSize: 11 }} tickFormatter={(v) => `${v}%`} axisLine={false} tickLine={false} />
-        <YAxis type="category" dataKey="name" width={40} tick={{ fill: '#6b7280', fontSize: 11 }} axisLine={false} tickLine={false} />
+        <CartesianGrid stroke={chart.grid} horizontal={false} />
+        <XAxis type="number" domain={[0, 100]} tick={{ fill: chart.tick, fontSize: 11 }} tickFormatter={(v) => `${v}%`} axisLine={false} tickLine={false} />
+        <YAxis type="category" dataKey="name" width={40} tick={{ fill: chart.tick, fontSize: 11 }} axisLine={false} tickLine={false} />
         <Tooltip formatter={(value) => `${value}%`} labelFormatter={() => ''} />
         <Bar dataKey="winRate" name="Win rate" radius={[0, 4, 4, 0]} barSize={16}>
           {rows.map((entry) => (
-            <Cell key={entry.name} fill={(entry.winRate ?? 0) >= 50 ? '#22c55e' : '#ef4444'} />
+            <Cell key={entry.name} fill={(entry.winRate ?? 0) >= 50 ? COLORS.positive : COLORS.negative} />
           ))}
         </Bar>
       </BarChart>

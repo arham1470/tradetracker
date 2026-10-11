@@ -3,27 +3,79 @@
 @tailwind utilities;
 
 @layer base {
-  html {
-    color-scheme: dark;
+  /*
+   * Theme tokens — each theme defines the same set of custom properties.
+   * Values are bare RGB triplets so Tailwind can plug them into
+   * `rgb(var(--token) / <alpha-value>)` and alpha modifiers keep working.
+   *
+   * Default (no `.dark` class) is the LIGHT theme; the `.dark` class on
+   * <html> (applied by the ThemeProvider / inline bootstrap script) switches
+   * to the original dark palette.
+   */
+  :root {
+    color-scheme: light;
+
+    --color-primary: 246 248 250;
+    --color-surface: 255 255 255;
+    --color-surface-alt: 240 243 247;
+    --color-border: 226 231 238;
+    --color-input: 250 251 253;
+    --color-foreground: 15 20 27;
+    --color-positive: 22 163 74;
+    --color-negative: 220 38 38;
+
+    --neutral-100: 30 35 42;
+    --neutral-200: 55 62 71;
+    --neutral-300: 78 87 100;
+    --neutral-400: 100 110 125;
+    --neutral-500: 128 138 154;
+    --neutral-600: 160 170 184;
+    --neutral-700: 197 204 214;
+    --neutral-800: 224 229 236;
+    --neutral-900: 240 242 246;
   }
+
+  .dark {
+    color-scheme: dark;
+
+    --color-primary: 7 9 12;
+    --color-surface: 13 17 23;
+    --color-surface-alt: 18 24 34;
+    --color-border: 29 36 48;
+    --color-input: 15 20 27;
+    --color-foreground: 255 255 255;
+    --color-positive: 34 197 94;
+    --color-negative: 239 68 68;
+
+    --neutral-100: 245 245 245;
+    --neutral-200: 229 229 229;
+    --neutral-300: 212 212 212;
+    --neutral-400: 163 163 163;
+    --neutral-500: 115 115 115;
+    --neutral-600: 82 82 82;
+    --neutral-700: 64 64 64;
+    --neutral-800: 38 38 38;
+    --neutral-900: 23 23 23;
+  }
+
   body {
     @apply bg-primary text-neutral-100 antialiased;
     font-feature-settings: 'tnum' 1;
   }
   ::selection {
-    @apply bg-accent/30 text-white;
+    @apply bg-accent/30;
   }
-  /* Subtle scrollbars to match the dark theme. */
+  /* Subtle scrollbars that work on both themes. */
   * {
     scrollbar-width: thin;
-    scrollbar-color: #262c36 transparent;
+    scrollbar-color: rgb(var(--color-border)) transparent;
   }
   *::-webkit-scrollbar {
     height: 8px;
     width: 8px;
   }
   *::-webkit-scrollbar-thumb {
-    @apply rounded-full bg-slate-700;
+    @apply rounded-full bg-neutral-700;
   }
 }
 
@@ -41,10 +93,10 @@
     @apply btn bg-accent text-white hover:bg-accent-hover active:scale-[0.99];
   }
   .btn-secondary {
-    @apply btn border border-border bg-surface text-neutral-200 hover:bg-neutral-800/70;
+    @apply btn border border-border bg-surface text-neutral-200 hover:bg-surface-alt/70;
   }
   .btn-danger {
-    @apply btn border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20;
+    @apply btn border border-red-500/30 bg-red-500/10 text-red-600 hover:bg-red-500/20 dark:text-red-400;
   }
   .btn-sm {
     @apply px-2.5 py-1.5 text-xs;
@@ -87,4 +139,32 @@ input[type='number'] {
 }
 .animate-fade-rise {
   animation: fade-rise 0.3s ease both;
+}
+
+/* Fade-in used by the mobile drawer backdrop. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.animate-fade-in {
+  animation: fade-in 0.25s ease both;
+}
+
+/* Slide-in-from-left used when the mobile drawer opens. */
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+.animate-slide-in-left {
+  animation: slide-in-left 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
 }

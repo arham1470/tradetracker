@@ -28,7 +28,7 @@ export default function FilterBar({ filters, onChange }) {
             onClick={() => onChange({ ...filters, range: range.value })}
             className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
               String(filters.range) === range.value
-                ? 'bg-accent/15 text-white'
+                ? 'bg-accent/15 text-foreground'
                 : 'text-neutral-400 hover:text-neutral-200'
             }`}
           >
@@ -45,7 +45,7 @@ export default function FilterBar({ filters, onChange }) {
             onClick={() => onChange({ ...filters, instrument: instrument.value })}
             className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition ${
               filters.instrument === instrument.value
-                ? 'bg-accent/15 text-white'
+                ? 'bg-accent/15 text-foreground'
                 : 'text-neutral-400 hover:text-neutral-200'
             }`}
           >

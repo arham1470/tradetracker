@@ -23,11 +23,11 @@ function CommandBlock({ command, caption }) {
     <div className="rounded-lg border border-border bg-input">
       <div className="flex items-center justify-between border-b border-border px-3 py-1.5">
         <p className="text-[11px] uppercase tracking-wide text-neutral-500">{caption}</p>
-        <button type="button" onClick={copy} className="flex items-center gap-1 text-xs text-neutral-400 hover:text-white">
+        <button type="button" onClick={copy} className="flex items-center gap-1 text-xs text-neutral-400 hover:text-foreground">
           {copied ? 'Copied ✓' : <><Copy size={12} /> Copy</>}
         </button>
       </div>
-      <p className="px-3 py-2.5 font-mono text-sm text-amber-300">{command}</p>
+      <p className="px-3 py-2.5 font-mono text-sm text-amber-700 dark:text-amber-300">{command}</p>
     </div>
   );
 }
@@ -52,7 +52,7 @@ export default function SettingsPage() {
   return (
     <div className="animate-fade-rise space-y-6">
       <header className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight text-white">Settings</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Settings</h1>
         <p className="mt-1 text-sm text-neutral-500">Data maintenance & information</p>
       </header>
 
@@ -62,10 +62,10 @@ export default function SettingsPage() {
         <div className="mb-4 flex items-start gap-3">
           <div className="mt-0.5 text-accent"><Database size={20} /></div>
           <div className="flex-1">
-            <h2 className="text-sm font-semibold text-white">Demo data</h2>
+            <h2 className="text-sm font-semibold text-foreground">Demo data</h2>
             <p className="mt-1 text-sm leading-relaxed text-neutral-400">
               The repo includes a <span className="font-medium text-neutral-200">seed script</span> that inserts ~34
-              clearly-labelled demo trades (flagged <span className="text-amber-400">demo</span>) so you can explore the
+              clearly-labelled demo trades (flagged <span className="text-amber-600 dark:text-amber-400">demo</span>) so you can explore the
               dashboard with realistic numbers. Run it from the server folder:
             </p>
           </div>
@@ -93,7 +93,7 @@ export default function SettingsPage() {
         <div className="flex items-start gap-3">
           <div className="mt-0.5 text-negative"><ShieldAlert size={20} /></div>
           <div className="flex-1">
-            <h2 className="text-sm font-semibold text-white">Privacy & security</h2>
+            <h2 className="text-sm font-semibold text-foreground">Privacy & security</h2>
             <p className="mt-1 text-sm leading-relaxed text-neutral-400">
               TradeTrack is a <strong className="text-neutral-200">personal, local application</strong>. It has{' '}
               <strong className="text-neutral-200">no authentication layer</strong>, so it is intended to run only on
@@ -112,7 +112,7 @@ export default function SettingsPage() {
         <div className="flex items-start gap-3">
           <div className="mt-0.5 text-positive"><TerminalSquare size={20} /></div>
           <div className="flex-1">
-            <h2 className="text-sm font-semibold text-white">How performance is calculated</h2>
+            <h2 className="text-sm font-semibold text-foreground">How performance is calculated</h2>
             <ul className="mt-2 space-y-1.5 text-sm leading-relaxed text-neutral-400">
               <li>
                 <span className="font-medium text-neutral-300">Actual R</span> uses the real exit price and initial risk

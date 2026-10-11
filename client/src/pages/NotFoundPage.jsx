@@ -8,7 +8,7 @@ export default function NotFoundPage() {
         <Compass size={26} />
       </div>
       <div>
-        <p className="text-lg font-semibold text-white">Page not found</p>
+        <p className="text-lg font-semibold text-foreground">Page not found</p>
         <p className="mt-1 text-sm text-neutral-500">The page you are looking for does not exist.</p>
       </div>
       <Link to="/" className="btn-primary">

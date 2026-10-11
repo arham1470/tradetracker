@@ -1,11 +1,25 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="TradeTrack — a personal Forex backtesting journal. Track manual backtest results with automatic R-multiple analytics." />
     <meta name="theme-color" content="#07090c" />
     <title>TradeTrack — Backtest Journal</title>
+    <script>
+      // Apply the persisted theme before first paint so the page never loads
+      // in the wrong theme (defaults to dark, the app's original look).
+      (function () {
+        try {
+          var stored = localStorage.getItem('tradetracker-theme');
+          var isDark = stored ? stored === 'dark' : true;
+          if (isDark) document.documentElement.classList.add('dark');
+          else document.documentElement.classList.remove('dark');
+        } catch (e) {
+          document.documentElement.classList.add('dark');
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

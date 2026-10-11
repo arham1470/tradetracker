@@ -14,6 +14,7 @@ import {
   YAxis,
 } from 'recharts';
 import { formatDate, formatNumber, formatR } from '../utils/format.js';
+import { useTheme } from '../theme/ThemeContext.jsx';
 
 export const COLORS = {
   accent: '#3b82f6',
@@ -22,8 +23,20 @@ export const COLORS = {
   neutral: '#94a3b8',
 };
 
-const AXIS_TICK = { fill: '#6b7280', fontSize: 11 };
-const GRID = 'rgba(148,163,184,0.08)';
+/** Theme-aware chart colours (axes, grid, donut stroke). */
+export function useChartTheme() {
+  const { theme } = useTheme();
+  const dark = theme === 'dark';
+  return {
+    tick: dark ? '#6b7280' : '#64748b',
+    grid: dark ? 'rgba(148,163,184,0.08)' : 'rgba(100,116,139,0.15)',
+    cursor: dark ? 'rgba(148,163,184,0.06)' : 'rgba(100,116,139,0.08)',
+    donutStroke: dark ? '#0d1117' : '#ffffff',
+  };
+}
+
+/** Recharts axis tick object styled for the active theme. */
+const axisTick = (chart) => ({ fill: chart.tick, fontSize: 11 });
 
 function ChartTooltip({ active, payload, label }) {
   if (!active || !payload || !payload.length) return null;
@@ -34,7 +47,7 @@ function ChartTooltip({ active, payload, label }) {
         <p key={entry.dataKey} className="flex items-center gap-2 text-neutral-400">
           <span className="h-2 w-2 rounded-full" style={{ background: entry.color || entry.fill || COLORS.accent }} />
           <span className="capitalize">{entry.name}:</span>
-          <span className="font-mono font-medium text-white">
+          <span className="font-mono font-medium text-foreground">
             {entry.dataKey === 'netR' ? formatR(entry.value) : formatNumber(entry.value, Number.isInteger(entry.value) ? 0 : 2)}
           </span>
         </p>
@@ -54,6 +67,7 @@ function NoData({ height = 280 }) {
 
 /** Cumulative R equity curve (area chart). */
 export function REquityChart({ data }) {
+  const chart = useChartTheme();
   if (!data || !data.length) return <NoData />;
   return (
     <ResponsiveContainer width="100%" height={280}>
@@ -64,9 +78,9 @@ export function REquityChart({ data }) {
             <stop offset="100%" stopColor={COLORS.accent} stopOpacity={0.02} />
           </linearGradient>
         </defs>
-        <CartesianGrid stroke={GRID} vertical={false} />
-        <XAxis dataKey="date" tick={AXIS_TICK} tickFormatter={(value) => formatDate(value)} minTickGap={48} axisLine={false} tickLine={false} />
-        <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+        <CartesianGrid stroke={chart.grid} vertical={false} />
+        <XAxis dataKey="date" tick={axisTick(chart)} tickFormatter={(value) => formatDate(value)} minTickGap={48} axisLine={false} tickLine={false} />
+        <YAxis tick={axisTick(chart)} axisLine={false} tickLine={false} />
         <Tooltip content={<ChartTooltip />} />
         <Area type="monotone" dataKey="netR" name="Net R" stroke={COLORS.accent} strokeWidth={2} fill="url(#equityFill)" />
       </AreaChart>
@@ -76,6 +90,7 @@ export function REquityChart({ data }) {
 
 /** Win/loss distribution donut. */
 export function OutcomeDonut({ wins = 0, losses = 0, breakevens = 0 }) {
+  const chart = useChartTheme();
   const data = [];
   if (wins > 0) data.push({ name: 'Wins', value: wins, fill: COLORS.positive });
   if (breakevens > 0) data.push({ name: 'Breakeven', value: breakevens, fill: COLORS.neutral });
@@ -96,7 +111,7 @@ export function OutcomeDonut({ wins = 0, losses = 0, breakevens = 0 }) {
               innerRadius={55}
               outerRadius={80}
               paddingAngle={3}
-              stroke="#0d1117"
+              stroke={chart.donutStroke}
             >
               {data.map((entry) => (
                 <Cell key={entry.name} fill={entry.fill} />
@@ -113,7 +128,7 @@ export function OutcomeDonut({ wins = 0, losses = 0, breakevens = 0 }) {
               <span className="h-2.5 w-2.5 rounded-full" style={{ background: entry.fill }} />
               {entry.name}
             </span>
-            <span className="font-semibold text-white">
+            <span className="font-semibold text-foreground">
               {entry.value}
               <span className="ml-2 font-mono text-xs text-neutral-500">
                 {total ? Math.round((entry.value / total) * 100) : 0}%
@@ -127,15 +142,16 @@ export function OutcomeDonut({ wins = 0, losses = 0, breakevens = 0 }) {
 }
 /** Horizontal net-R bar chart (instruments / strategies). */
 export function HorizontalRBar({ data, dataKey = 'netR' }) {
+  const chart = useChartTheme();
   if (!data || !data.length) return <NoData />;
   const chartData = [...data].sort((a, b) => (b.netR ?? 0) - (a.netR ?? 0));
   return (
     <ResponsiveContainer width="100%" height={Math.max(160, chartData.length * 46)}>
       <BarChart data={chartData} layout="vertical" margin={{ top: 4, right: 16, left: 8, bottom: 4 }}>
-        <CartesianGrid stroke={GRID} horizontal={false} />
-        <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
-        <YAxis type="category" dataKey="name" tick={AXIS_TICK} width={74} axisLine={false} tickLine={false} />
-        <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(148,163,184,0.06)' }} />
+        <CartesianGrid stroke={chart.grid} horizontal={false} />
+        <XAxis type="number" tick={axisTick(chart)} axisLine={false} tickLine={false} />
+        <YAxis type="category" dataKey="name" tick={axisTick(chart)} width={74} axisLine={false} tickLine={false} />
+        <Tooltip content={<ChartTooltip />} cursor={{ fill: chart.cursor }} />
         <Bar dataKey={dataKey} name="Net R" radius={[0, 4, 4, 0]} barSize={18}>
           {chartData.map((entry) => (
             <Cell key={entry.name} fill={(entry.netR ?? 0) >= 0 ? COLORS.positive : COLORS.negative} />
@@ -148,15 +164,16 @@ export function HorizontalRBar({ data, dataKey = 'netR' }) {
 
 /** Monthly net R bar chart. */
 export function MonthlyChart({ data }) {
+  const chart = useChartTheme();
   if (!data || !data.length) return <NoData />;
   return (
     <ResponsiveContainer width="100%" height={260}>
       <BarChart data={data} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
-        <CartesianGrid stroke={GRID} vertical={false} />
-        <XAxis dataKey="label" tick={AXIS_TICK} minTickGap={24} axisLine={false} tickLine={false} />
-        <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
-        <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(148,163,184,0.06)' }} />
-        <Legend wrapperStyle={{ fontSize: 11 }} />
+        <CartesianGrid stroke={chart.grid} vertical={false} />
+        <XAxis dataKey="label" tick={axisTick(chart)} minTickGap={24} axisLine={false} tickLine={false} />
+        <YAxis tick={axisTick(chart)} axisLine={false} tickLine={false} />
+        <Tooltip content={<ChartTooltip />} cursor={{ fill: chart.cursor }} />
+        <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" />
         <Bar dataKey="netR" name="Net R" radius={[4, 4, 0, 0]}>
           {data.map((entry) => (
             <Cell key={entry.key} fill={(entry.netR ?? 0) >= 0 ? COLORS.positive : COLORS.negative} />
@@ -168,7 +185,7 @@ export function MonthlyChart({ data }) {
 }
 
 /** Dashboard-friendly number card with subtle accent styling. */
-export function StatCard({ label, value, sub, accent = 'text-white' }) {
+export function StatCard({ label, value, sub, accent = 'text-foreground' }) {
   return (
     <div className="card p-4">
       <p className="text-xs font-medium uppercase tracking-wider text-neutral-500">{label}</p>

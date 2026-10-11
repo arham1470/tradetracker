@@ -46,7 +46,7 @@ export default function AnalyticsPage() {
     <div className="animate-fade-rise space-y-6">
       <header className="mb-2 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white">Analytics</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">Analytics</h1>
           <p className="mt-1 text-sm text-neutral-500">Breakdowns by market and by strategy</p>
         </div>
       </header>
@@ -85,7 +85,7 @@ export default function AnalyticsPage() {
 function SectionTitle({ title, subtitle }) {
   return (
     <div className="mb-4">
-      <h2 className="text-sm font-semibold text-white">{title}</h2>
+      <h2 className="text-sm font-semibold text-foreground">{title}</h2>
       <p className="mt-0.5 text-xs text-neutral-500">{subtitle}</p>
     </div>
   );
@@ -114,7 +114,7 @@ function TableShell({ children }) {
 function Row({ name, row, nameClassName = '' }) {
   return (
     <tr className="hover:bg-surface-alt/60">
-      <td className={`py-2.5 font-medium text-white ${nameClassName}`}>{row.name ?? name}</td>
+      <td className={`py-2.5 font-medium text-foreground ${nameClassName}`}>{row.name ?? name}</td>
       <td className="py-2.5 text-right text-neutral-400">{formatNumber(row.trades, 0)}</td>
       <td className="py-2.5 text-right text-neutral-300">{formatPercent(row.winRate)}</td>
       <td className={`py-2.5 text-right font-mono font-semibold ${signClass(row.netR)}`}>{formatR(row.netR)}</td>

@@ -35,6 +35,17 @@ export function formatPrice(value) {
   return number.toFixed(decimals);
 }
 
+/** Format a money amount (USD) — "—" style fallback, optional +/- sign. */
+export function formatMoney(value, { showSign = false, fallback = '—' } = {}) {
+  if (value === null || value === undefined || Number.isNaN(Number(value))) return fallback;
+  const number = Number(value);
+  const sign = number < 0 ? '-' : showSign && number > 0 ? '+' : '';
+  return `${sign}$${Math.abs(number).toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
 export function formatDate(value) {
   if (!value) return '—';
   return new Date(value).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });

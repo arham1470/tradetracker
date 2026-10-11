@@ -41,7 +41,7 @@ function PillGroup({ options, value, onChange, formatter = (option) => option })
             onClick={() => onChange(optionValue)}
             className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${
               selected
-                ? 'border-accent bg-accent/15 text-white'
+                ? 'border-accent bg-accent/15 text-foreground'
                 : 'border-border text-neutral-400 hover:text-neutral-200'
             }`}
           >
@@ -98,7 +98,7 @@ export function TradeForm({ initial, onSubmit, submitting, submitLabel, onCancel
   // Compact mode renders tighter padding/gaps so the form fits comfortably
   // inside the edit modal without excessive scrolling.
   const sectionClass = compact ? 'card p-4' : 'card p-5';
-  const headingClass = compact ? 'mb-3 text-sm font-semibold text-white' : 'mb-4 text-sm font-semibold text-white';
+  const headingClass = compact ? 'mb-3 text-sm font-semibold text-foreground' : 'mb-4 text-sm font-semibold text-foreground';
 
   return (
     <form onSubmit={handleSubmit} className={compact ? 'space-y-4' : 'space-y-6'}>
