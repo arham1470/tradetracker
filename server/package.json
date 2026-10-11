@@ -1,0 +1,30 @@
+{
+  "name": "tradetracker-server",
+  "version": "1.0.0",
+  "description": "TradeTrack - Forex backtesting journal API",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "dev": "nodemon server.js",
+    "start": "node server.js",
+    "seed": "node utils/seed.js",
+    "test:calc": "node utils/__tests__/calculations.test.js"
+  },
+  "keywords": [
+    "forex",
+    "backtesting",
+    "journal",
+    "mern"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mongoose": "^8.5.1",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}

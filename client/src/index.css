@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-primary text-neutral-100 antialiased;
+    font-feature-settings: 'tnum' 1;
+  }
+  ::selection {
+    @apply bg-accent/30 text-white;
+  }
+  /* Subtle scrollbars to match the dark theme. */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #262c36 transparent;
+  }
+  *::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+  *::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-slate-700;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-border bg-surface;
+  }
+  .input {
+    @apply w-full rounded-lg border border-border bg-input px-3 py-2 text-sm text-neutral-100 placeholder:text-neutral-500 outline-none transition focus:border-accent/60 focus:ring-2 focus:ring-accent/20;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply btn bg-accent text-white hover:bg-accent-hover active:scale-[0.99];
+  }
+  .btn-secondary {
+    @apply btn border border-border bg-surface text-neutral-200 hover:bg-neutral-800/70;
+  }
+  .btn-danger {
+    @apply btn border border-red-500/30 bg-red-500/10 text-red-400 hover:bg-red-500/20;
+  }
+  .btn-sm {
+    @apply px-2.5 py-1.5 text-xs;
+  }
+  .label {
+    @apply mb-1.5 block text-xs font-medium uppercase tracking-wide text-neutral-400;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium;
+  }
+  .th {
+    @apply px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider text-neutral-400;
+  }
+  .td {
+    @apply px-3 py-3 text-sm text-neutral-200;
+  }
+}
+
+/* Thin number inputs so long prices remain readable without spinners clutter. */
+input[type='number']::-webkit-outer-spin-button,
+input[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Subtle fade/rise for page transitions & grouped content. */
+@keyframes fade-rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-rise {
+  animation: fade-rise 0.3s ease both;
+}

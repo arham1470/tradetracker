@@ -1,0 +1,24 @@
+{
+  "name": "tradetracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "TradeTrack — a personal Forex backtesting journal (MERN stack)",
+  "scripts": {
+    "install:all": "npm --prefix server install && npm --prefix client install",
+    "dev:server": "npm --prefix server run dev",
+    "dev:client": "npm --prefix client run dev",
+    "dev": "npm --prefix server run start",
+    "seed": "npm --prefix server run seed",
+    "seed:clean": "npm --prefix server run seed -- clean",
+    "test": "npm --prefix server run test:calc",
+    "build": "npm --prefix client run build"
+  },
+  "keywords": [
+    "forex",
+    "backtesting",
+    "journal",
+    "mern",
+    "trading"
+  ],
+  "license": "MIT"
+}
