@@ -13,6 +13,7 @@ import {
   Settings,
   Sun,
   Table2,
+  Target,
   TrendingDown,
   TrendingUp,
   Wallet,
@@ -27,6 +28,7 @@ import { formatMoney, formatNumber } from '../utils/format.js';
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/trades', label: 'Trade History', icon: Table2 },
+  { to: '/strategies', label: 'Strategies', icon: Target },
   { to: '/analytics', label: 'Analytics', icon: BarChart3 },
   { to: '/settings', label: 'Settings', icon: Settings },
 ];

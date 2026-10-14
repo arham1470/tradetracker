@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Save, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Save, Sparkles, X } from 'lucide-react';
 import { DIRECTIONS, INSTRUMENTS, SESSIONS, TIMEFRAMES } from '../constants/index.js';
 import { toDateInputValue } from '../utils/format.js';
 import { computeActualR, computePlannedRR, deriveOutcome } from '../utils/calculations.js';
+import { strategyApi } from '../services/api.js';
 
 /**
  * Shared trade form used by the Add Trade page and the edit modal in
@@ -54,12 +55,49 @@ function PillGroup({ options, value, onChange, formatter = (option) => option })
 }
 
 export function TradeForm({ initial, onSubmit, submitting, submitLabel, onCancel, compact }) {
+  const [searchParams] = useSearchParams();
   const [form, setForm] = useState(() => ({ ...emptyForm, ...(initial || {}) }));
+  const [strategies, setStrategies] = useState([]);
+  const [loadingStrategies, setLoadingStrategies] = useState(true);
+  const [customMode, setCustomMode] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    strategyApi
+      .getStrategies()
+      .then((res) => {
+        if (!isMounted) return;
+        const list = res.data?.strategies || [];
+        setStrategies(list);
+        setLoadingStrategies(false);
+
+        // Pre-select strategy from URL query param if present and not editing with existing value
+        const paramStrategy = searchParams.get('strategy');
+        if (paramStrategy && !initial?.strategy) {
+          setForm((prev) => ({ ...prev, strategy: paramStrategy }));
+        }
+      })
+      .catch(() => {
+        if (isMounted) setLoadingStrategies(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [searchParams, initial?.strategy]);
 
   const setField = (field) => (event) => setForm((prev) => ({ ...prev, [field]: event.target.value }));
   const setSelect = (field) => (value) => setForm((prev) => ({ ...prev, [field]: value }));
 
   const isEditing = Boolean(initial?.id || initial?._id);
+
+  // Selected strategy object (for rule/details preview)
+  const selectedStrategy = useMemo(() => {
+    if (!form.strategy) return null;
+    return strategies.find(
+      (s) => s.title.toLowerCase() === form.strategy.trim().toLowerCase()
+    );
+  }, [strategies, form.strategy]);
 
   // Live preview of what the server will compute.
   const preview = useMemo(() => {
@@ -76,11 +114,21 @@ export function TradeForm({ initial, onSubmit, submitting, submitLabel, onCancel
 
   const handleSubmit = (event) => {
     event.preventDefault();
+    const strategyTrimmed = form.strategy.trim();
+
+    // Auto-create strategy in background if entered as a new custom strategy
+    if (
+      strategyTrimmed &&
+      !strategies.some((s) => s.title.toLowerCase() === strategyTrimmed.toLowerCase())
+    ) {
+      strategyApi.createStrategy({ title: strategyTrimmed }).catch(() => {});
+    }
+
     onSubmit({
       tradeDate: form.tradeDate,
       instrument: form.instrument,
       direction: form.direction,
-      strategy: form.strategy,
+      strategy: strategyTrimmed,
       timeframe: form.timeframe,
       session: form.session,
       entryPrice: Number(form.entryPrice),
@@ -141,8 +189,77 @@ export function TradeForm({ initial, onSubmit, submitting, submitLabel, onCancel
             <PillGroup options={DIRECTIONS} value={form.direction} onChange={setSelect('direction')} formatter={({ label }) => label} />
           </div>
           <div>
-            <label className="label" htmlFor="strategy">Strategy *</label>
-            <input id="strategy" className="input" placeholder="e.g. London breakout" value={form.strategy} onChange={setField('strategy')} maxLength={80} required />
+            <div className="flex items-center justify-between">
+              <label className="label" htmlFor="strategy">
+                Strategy *
+              </label>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setCustomMode(!customMode)}
+                  className="text-[11px] font-medium text-accent hover:underline"
+                >
+                  {customMode ? 'Select from list' : '+ Custom / New'}
+                </button>
+              </div>
+            </div>
+
+            {customMode ? (
+              <input
+                id="strategy"
+                className="input"
+                placeholder="Type strategy name (e.g. London Breakout)"
+                value={form.strategy}
+                onChange={setField('strategy')}
+                maxLength={80}
+                required
+                autoFocus
+              />
+            ) : (
+              <select
+                id="strategy"
+                className="input"
+                value={form.strategy}
+                onChange={setField('strategy')}
+                required
+              >
+                <option value="">
+                  {loadingStrategies ? 'Loading strategies…' : '-- Select Strategy --'}
+                </option>
+                {strategies.map((strat) => (
+                  <option key={strat.id || strat._id} value={strat.title}>
+                    {strat.title}
+                  </option>
+                ))}
+                {/* Fallback for existing trades whose strategy is not in the strategies table */}
+                {form.strategy &&
+                  !strategies.some(
+                    (s) => s.title.toLowerCase() === form.strategy.trim().toLowerCase()
+                  ) && (
+                    <option value={form.strategy}>
+                      {form.strategy} (Custom / Legacy)
+                    </option>
+                  )}
+              </select>
+            )}
+
+            {/* If a strategy with details is selected, display preview */}
+            {!customMode && selectedStrategy?.details && (
+              <div className="mt-1.5 rounded-lg border border-border/70 bg-surface-alt/40 p-2 text-[11px] leading-relaxed text-neutral-300">
+                <span className="font-semibold text-accent">Rulebook: </span>
+                <span className="line-clamp-2">{selectedStrategy.details}</span>
+              </div>
+            )}
+
+            {!customMode && strategies.length === 0 && !loadingStrategies && (
+              <p className="mt-1 text-[11px] text-neutral-500">
+                No strategies found.{' '}
+                <Link to="/strategies" className="text-accent underline font-medium">
+                  Create your first strategy
+                </Link>{' '}
+                or switch to custom mode.
+              </p>
+            )}
           </div>
           <div>
             <label className="label">Timeframe *</label>

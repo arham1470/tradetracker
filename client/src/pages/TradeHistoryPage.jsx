@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Download, Eye, Filter, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
-import { tradeApi, toErrorMessage } from '../services/api.js';
+import { tradeApi, strategyApi, toErrorMessage } from '../services/api.js';
 import { Card, EmptyState, ErrorBanner, Spinner } from '../components/ui.jsx';
 import { INSTRUMENTS, OUTCOMES } from '../constants/index.js';
 import { TradeForm } from '../components/TradeForm.jsx';
@@ -73,13 +73,15 @@ export default function TradeHistoryPage() {
 
   // Strategy list for the filter dropdown (loaded once).
   useEffect(() => {
-    tradeApi
-      .getTrades({ limit: 1000, sort: 'tradeDate', order: 'desc' })
-      .then((res) => {
-        const unique = [...new Set(res.data.trades.map((t) => t.strategy).filter(Boolean))].sort();
-        setStrategies(unique);
-      })
-      .catch(() => {});
+    Promise.all([
+      tradeApi.getTrades({ limit: 1000, sort: 'tradeDate', order: 'desc' }).catch(() => ({ data: { trades: [] } })),
+      strategyApi.getStrategies().catch(() => ({ data: { strategies: [] } })),
+    ]).then(([tradesRes, stratRes]) => {
+      const fromTrades = tradesRes.data?.trades?.map((t) => t.strategy).filter(Boolean) || [];
+      const fromDb = stratRes.data?.strategies?.map((s) => s.title).filter(Boolean) || [];
+      const unique = [...new Set([...fromTrades, ...fromDb])].sort();
+      setStrategies(unique);
+    });
   }, []);
 
   useEffect(() => {

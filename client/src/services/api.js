@@ -51,6 +51,24 @@ export const analyticsApi = {
   },
 };
 
+export const strategyApi = {
+  getStrategies(params) {
+    return api.get('/strategies', { params });
+  },
+  getStrategy(id) {
+    return api.get(`/strategies/${id}`);
+  },
+  createStrategy(strategy) {
+    return api.post('/strategies', strategy);
+  },
+  updateStrategy(id, strategy) {
+    return api.put(`/strategies/${id}`, strategy);
+  },
+  deleteStrategy(id) {
+    return api.delete(`/strategies/${id}`);
+  },
+};
+
 export const healthApi = {
   check() {
     return api.get('/health');

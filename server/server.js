@@ -7,6 +7,7 @@ import morgan from 'morgan';
 import { connectDB } from './config/db.js';
 import tradeRoutes from './routes/tradeRoutes.js';
 import analyticsRoutes from './routes/analyticsRoutes.js';
+import strategyRoutes from './routes/strategyRoutes.js';
 import { errorHandler, notFoundHandler } from './middleware/errorMiddleware.js';
 
 const app = express();
@@ -28,6 +29,7 @@ app.get('/api/health', (_req, res) => {
 // API routes.
 app.use('/api/trades', tradeRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/strategies', strategyRoutes);
 
 // 404 + centralised error handling.
 app.use(notFoundHandler);
