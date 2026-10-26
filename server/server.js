@@ -14,7 +14,12 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Global middleware.
-app.use(cors({ origin: process.env.CLIENT_URL?.split(',') || '*' }));
+const allowedOrigins =
+  process.env.CLIENT_URL && process.env.CLIENT_URL !== '*'
+    ? process.env.CLIENT_URL.split(',').map((url) => url.trim().replace(/\/+$/, ''))
+    : '*';
+
+app.use(cors({ origin: allowedOrigins }));
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 if (process.env.NODE_ENV !== 'production') {
