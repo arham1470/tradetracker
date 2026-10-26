@@ -24,98 +24,137 @@ export default function AccountBalanceCard({ trades = [] }) {
   const pnlPositive = equity.totalPnl >= 0;
   const showPnl = equity.enabled && equity.tradesCounted > 0;
 
+  const presets = ['5000', '10000', '25000', '50000'];
+
   return (
-    <Card className="p-4">
-      <div className="mb-4 flex items-start justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent/15 text-accent">
-            <Wallet size={16} />
+    <div className="glass-card p-5 group transition-all duration-300">
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/15 text-accent shadow-sm group-hover:scale-105 transition-transform">
+            <Wallet size={18} />
           </span>
           <div>
-            <h3 className="text-sm font-semibold text-foreground">Account balance</h3>
-            <p className="text-xs text-neutral-500">Starting balance + risk per trade</p>
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-foreground tracking-tight">Account Simulation & P&L</h3>
+              <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">Compounded</span>
+            </div>
+            <p className="text-xs text-neutral-500">Calculate actual portfolio equity based on running risk</p>
           </div>
+        </div>
+
+        {/* Quick balance preset chips */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-[11px] uppercase tracking-wider text-neutral-500 mr-1 font-medium hidden sm:inline">Presets:</span>
+          {presets.map((amount) => (
+            <button
+              key={amount}
+              type="button"
+              onClick={() => setStartingBalance(amount)}
+              className={`rounded-lg px-2.5 py-1 text-xs font-mono transition-all ${
+                String(startingBalance) === amount
+                  ? 'bg-accent text-white font-medium shadow-sm'
+                  : 'bg-surface-alt/70 text-neutral-400 hover:text-foreground hover:bg-surface-alt border border-border/60'
+              }`}
+            >
+              ${Number(amount) / 1000}k
+            </button>
+          ))}
         </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <div>
+        <div className="relative">
           <label className="label" htmlFor="starting-balance">
             Starting balance ($)
           </label>
-          <input
-            id="starting-balance"
-            type="number"
-            min="0"
-            step="100"
-            className="input font-mono"
-            value={startingBalance}
-            onChange={(e) => setStartingBalance(e.target.value)}
-            placeholder="10000"
-          />
+          <div className="relative">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 font-mono text-sm">$</span>
+            <input
+              id="starting-balance"
+              type="number"
+              min="0"
+              step="100"
+              className="input pl-7 font-mono font-medium focus:border-accent"
+              value={startingBalance}
+              onChange={(e) => setStartingBalance(e.target.value)}
+              placeholder="10000"
+            />
+          </div>
         </div>
         <div>
           <label className="label" htmlFor="risk-per-trade">
             Risk per trade (%)
           </label>
-          <input
-            id="risk-per-trade"
-            type="number"
-            min="0"
-            max="100"
-            step="0.25"
-            className="input font-mono"
-            value={riskPercent}
-            onChange={(e) => setRiskPercent(e.target.value)}
-            placeholder="1"
-          />
+          <div className="relative">
+            <input
+              id="risk-per-trade"
+              type="number"
+              min="0"
+              max="100"
+              step="0.25"
+              className="input pr-8 font-mono font-medium focus:border-accent"
+              value={riskPercent}
+              onChange={(e) => setRiskPercent(e.target.value)}
+              placeholder="1"
+            />
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 font-mono text-sm">%</span>
+          </div>
         </div>
       </div>
 
       {showPnl ? (
-        <div className="mt-4 grid grid-cols-3 gap-3">
-          <div className="rounded-lg border border-border bg-input px-3 py-2.5">
-            <p className="text-[11px] uppercase tracking-wide text-neutral-500">Current balance</p>
-            <p className="mt-0.5 font-mono text-lg font-semibold text-foreground">
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="rounded-xl border border-border/80 bg-input/70 p-3.5 transition-all hover:border-accent/30">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Current Balance</p>
+            <p className="mt-1 font-mono text-xl font-bold tracking-tight text-foreground">
               {formatMoney(equity.currentBalance)}
             </p>
+            <p className="mt-0.5 text-[11px] text-neutral-500">
+              from {formatMoney(Number(startingBalance))} start
+            </p>
           </div>
-          <div className="rounded-lg border border-border bg-input px-3 py-2.5">
-            <p className="text-[11px] uppercase tracking-wide text-neutral-500">Total P&L</p>
+          <div className="rounded-xl border border-border/80 bg-input/70 p-3.5 transition-all hover:border-accent/30">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Total Net P&L</p>
             <p
-              className={`mt-0.5 flex items-center gap-1 font-mono text-lg font-semibold ${
+              className={`mt-1 flex items-center gap-1.5 font-mono text-xl font-bold tracking-tight ${
                 pnlPositive ? 'text-positive' : 'text-negative'
               }`}
             >
-              {pnlPositive ? <TrendingUp size={15} /> : <TrendingDown size={15} />}
+              {pnlPositive ? <TrendingUp size={18} className="animate-pulse" /> : <TrendingDown size={18} />}
               {formatMoney(equity.totalPnl, { showSign: true })}
             </p>
+            <p className="mt-0.5 text-[11px] text-neutral-500">
+              {equity.currentBalance && Number(startingBalance) > 0
+                ? `${pnlPositive ? '+' : ''}${(((equity.currentBalance - Number(startingBalance)) / Number(startingBalance)) * 100).toFixed(2)}% ROI`
+                : 'ROI'}
+            </p>
           </div>
-          <div className="rounded-lg border border-border bg-input px-3 py-2.5">
-            <p className="text-[11px] uppercase tracking-wide text-neutral-500">Total R</p>
+          <div className="rounded-xl border border-border/80 bg-input/70 p-3.5 transition-all hover:border-accent/30">
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-neutral-400">Compounded R Return</p>
             <p
-              className={`mt-0.5 font-mono text-lg font-semibold ${
+              className={`mt-1 font-mono text-xl font-bold tracking-tight ${
                 equity.totalR >= 0 ? 'text-positive' : 'text-negative'
               }`}
             >
               {equity.totalR >= 0 ? '+' : ''}
               {equity.totalR}R
             </p>
+            <p className="mt-0.5 text-[11px] text-neutral-500">
+              Across {equity.tradesCounted} trade{equity.tradesCounted === 1 ? '' : 's'}
+            </p>
           </div>
         </div>
       ) : (
-        <div className="mt-4 rounded-lg border border-border bg-surface-alt/40 px-3 py-3 text-xs text-neutral-500">
-          <p className="font-medium text-neutral-400">How money P&L works</p>
+        <div className="mt-4 rounded-xl border border-border/70 bg-surface-alt/40 p-3.5 text-xs text-neutral-500">
+          <p className="font-semibold text-neutral-400 flex items-center gap-1.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent animate-ping" />
+            Compound Growth Simulation
+          </p>
           <p className="mt-1 leading-relaxed">
-            Set a starting balance and a risk-per-trade percentage. Each trade's money P&L is
-            {balanceConfigured ? (
-              <> derived from its R-multiple × risk (compounded per trade). Add a few trades to see the numbers.</>
-            ) : (
-              <> risk × R-multiple. Enter a positive balance and risk % to calculate it.</>
-            )}
+            Enter your starting balance and risk percentage. Each backtested trade will compound risk based on current balance, showing your exact simulated account equity curve and growth.
           </p>
         </div>
       )}
-    </Card>
+    </div>
   );
 }

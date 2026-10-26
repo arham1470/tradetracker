@@ -141,6 +141,59 @@ input[type='number'] {
   animation: fade-rise 0.3s ease both;
 }
 
+/* Modern staggered entrance animation with gentle scale and rise */
+@keyframes fade-rise-up {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.animate-fade-rise-up {
+  animation: fade-rise-up 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Ambient glow pulsation for status badges and live beacons */
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 14px -2px rgba(59, 130, 246, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 24px 2px rgba(59, 130, 246, 0.45);
+  }
+}
+.animate-glow-pulse {
+  animation: glow-pulse 3s ease-in-out infinite;
+}
+
+/* Stagger delay helpers for cascade card reveals */
+.delay-50 { animation-delay: 50ms; }
+.delay-100 { animation-delay: 100ms; }
+.delay-150 { animation-delay: 150ms; }
+.delay-200 { animation-delay: 200ms; }
+.delay-250 { animation-delay: 250ms; }
+.delay-300 { animation-delay: 300ms; }
+.delay-350 { animation-delay: 350ms; }
+.delay-400 { animation-delay: 400ms; }
+
+/* Modern glass card styling with refined border transitions */
+.glass-card {
+  position: relative;
+  border-radius: 1rem;
+  border: 1px solid rgb(var(--color-border));
+  background-color: rgb(var(--color-surface) / 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glass-card:hover {
+  border-color: rgba(59, 130, 246, 0.35);
+  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.15);
+}
+
 /* Fade-in used by the mobile drawer backdrop. */
 @keyframes fade-in {
   from {
