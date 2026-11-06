@@ -1,9 +1,9 @@
 import { useMemo } from 'react';
-import { TrendingUp, TrendingDown, Wallet } from 'lucide-react';
+import { TrendingUp, TrendingDown, Wallet, Filter } from 'lucide-react';
 import { Card } from './ui.jsx';
 import { useBalance } from '../balance/BalanceContext.jsx';
 import { computeAccountEquity } from '../utils/account.js';
-import { formatMoney } from '../utils/format.js';
+import { formatMoney, formatNumber } from '../utils/format.js';
 
 /**
  * Account balance card.
@@ -12,7 +12,7 @@ import { formatMoney } from '../utils/format.js';
  * resulting equity: current balance, total profit/loss in $ and total R.
  * P&L is compounded per trade (risk = running balance × risk%).
  */
-export default function AccountBalanceCard({ trades = [] }) {
+export default function AccountBalanceCard({ trades = [], filterLabel = '' }) {
   const { startingBalance, setStartingBalance, riskPercent, setRiskPercent, balanceConfigured } =
     useBalance();
 
@@ -37,6 +37,12 @@ export default function AccountBalanceCard({ trades = [] }) {
             <div className="flex items-center gap-2">
               <h3 className="text-sm font-semibold text-foreground tracking-tight">Account Simulation & P&L</h3>
               <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-medium text-accent">Compounded</span>
+              {filterLabel && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-surface-alt px-2 py-0.5 text-[10px] font-medium text-neutral-300 border border-border">
+                  <Filter size={10} className="text-accent" />
+                  {filterLabel}
+                </span>
+              )}
             </div>
             <p className="text-xs text-neutral-500">Calculate actual portfolio equity based on running risk</p>
           </div>

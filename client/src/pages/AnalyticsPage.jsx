@@ -22,8 +22,10 @@ export default function AnalyticsPage() {
     setLoading(true);
     setError(null);
     const params = {};
-    if (filters.range && filters.range !== '0') params.range = filters.range;
+    if (filters.range && filters.range !== '0' && filters.range !== 'custom') params.range = filters.range;
     if (filters.instrument) params.instrument = filters.instrument;
+    if (filters.startDate) params.startDate = filters.startDate;
+    if (filters.endDate) params.endDate = filters.endDate;
     try {
       const [instrumentsRes, strategiesRes] = await Promise.all([
         analyticsApi.getInstruments(params),
@@ -50,7 +52,7 @@ export default function AnalyticsPage() {
           <p className="mt-1 text-sm text-neutral-500">Breakdowns by market and by strategy</p>
         </div>
       </header>
-      <FilterBar filters={filters} onChange={setFilters} />
+      <FilterBar filters={filters} onChange={setFilters} showStrategy={false} />
       <ErrorBanner message={error} onRetry={load} />
 
       {loading ? (

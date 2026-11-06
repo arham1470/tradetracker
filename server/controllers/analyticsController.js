@@ -3,11 +3,16 @@ import { aggregateInstruments, aggregateStrategies, aggregateSummary } from '../
 import { parseDate } from '../utils/queryHelpers.js';
 import { ApiError } from '../utils/errors.js';
 
-/** Filter trades by instrument + optional date range (used by all analytics). */
+/** Filter trades by instrument + optional date range + strategy (used by all analytics). */
 function analyticsFilter(query) {
   const filter = {};
 
-  if (query.instrument) filter.instrument = query.instrument;
+  if (query.instrument && query.instrument !== 'all') {
+    filter.instrument = query.instrument;
+  }
+  if (query.strategy && query.strategy !== 'all') {
+    filter.strategy = query.strategy;
+  }
 
   const from = parseDate(query.startDate);
   const to = parseDate(query.endDate);
@@ -15,6 +20,11 @@ function analyticsFilter(query) {
     filter.tradeDate = {};
     if (from) filter.tradeDate.$gte = new Date(from.setHours(0, 0, 0, 0));
     if (to) filter.tradeDate.$lte = new Date(to.setHours(23, 59, 59, 999));
+  } else if (query.range && Number(query.range) > 0) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - Number(query.range));
+    cutoff.setHours(0, 0, 0, 0);
+    filter.tradeDate = { $gte: cutoff };
   }
 
   return filter;
@@ -45,7 +55,7 @@ export async function getStrategies(req, res) {
 
 /** Validate a known instrument when provided. */
 export function assertValidInstrument(req, _res, next) {
-  if (req.query.instrument) {
+  if (req.query.instrument && req.query.instrument !== 'all') {
     const known = ['EURUSD', 'XAUUSD', 'AUDUSD'];
     if (!known.includes(req.query.instrument)) {
       return next(new ApiError(400, `Unknown instrument "${req.query.instrument}".`));

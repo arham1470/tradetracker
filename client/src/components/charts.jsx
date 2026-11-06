@@ -8,12 +8,13 @@ import {
   Legend,
   Pie,
   PieChart,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from 'recharts';
-import { formatDate, formatNumber, formatR } from '../utils/format.js';
+import { formatDate, formatMoney, formatNumber, formatR } from '../utils/format.js';
 import { useTheme } from '../theme/ThemeContext.jsx';
 
 export const COLORS = {
@@ -83,6 +84,109 @@ export function REquityChart({ data }) {
         <YAxis tick={axisTick(chart)} axisLine={false} tickLine={false} />
         <Tooltip content={<ChartTooltip />} />
         <Area type="monotone" dataKey="netR" name="Net R" stroke={COLORS.accent} strokeWidth={2} fill="url(#equityFill)" />
+      </AreaChart>
+    </ResponsiveContainer>
+  );
+}
+
+function BalanceChartTooltip({ active, payload, startingBalance = 0 }) {
+  if (!active || !payload || !payload.length) return null;
+  const point = payload[0].payload;
+  const balance = point.balance ?? 0;
+  const start = Number(startingBalance) || 0;
+  const diffFromStart = balance - start;
+  const isUp = diffFromStart >= 0;
+
+  return (
+    <div className="rounded-xl border border-border bg-surface p-3 text-xs shadow-2xl backdrop-blur-md">
+      <div className="flex items-center justify-between gap-4 border-b border-border/50 pb-1.5 mb-2">
+        <span className="font-semibold text-foreground">
+          {point.date ? formatDate(point.date) : 'Initial'}
+        </span>
+        {point.instrument && (
+          <span className="chip text-[10px] bg-accent/15 text-accent font-semibold px-2 py-0.5">
+            {point.instrument}
+          </span>
+        )}
+      </div>
+      <div className="space-y-1.5 font-mono">
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-neutral-400">Balance:</span>
+          <span className="font-bold text-foreground text-sm">{formatMoney(balance)}</span>
+        </div>
+        {point.pnl !== undefined && point.label !== 'Initial' && (
+          <div className="flex items-center justify-between gap-4">
+            <span className="text-neutral-400">Trade P&L:</span>
+            <span className={`font-semibold ${point.pnl >= 0 ? 'text-positive' : 'text-negative'}`}>
+              {formatMoney(point.pnl, { showSign: true })} ({point.actualR >= 0 ? '+' : ''}{point.actualR}R)
+            </span>
+          </div>
+        )}
+        {start > 0 && (
+          <div className="flex items-center justify-between gap-4 pt-1 border-t border-border/40 text-[11px]">
+            <span className="text-neutral-500">Cumulative Return:</span>
+            <span className={isUp ? 'text-positive font-semibold' : 'text-negative font-semibold'}>
+              {formatMoney(diffFromStart, { showSign: true })} ({((diffFromStart / start) * 100).toFixed(2)}%)
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Account Balance simulation equity curve (area chart). */
+export function BalanceEquityChart({ data, startingBalance = 10000 }) {
+  const chart = useChartTheme();
+  if (!data || !data.length) return <NoData />;
+
+  const start = Number(startingBalance) || 0;
+  const lastPoint = data[data.length - 1];
+  const isNetPositive = (lastPoint?.balance ?? start) >= start;
+  const strokeColor = isNetPositive ? COLORS.positive : COLORS.negative;
+
+  return (
+    <ResponsiveContainer width="100%" height={280}>
+      <AreaChart data={data} margin={{ top: 12, right: 12, left: -4, bottom: 0 }}>
+        <defs>
+          <linearGradient id="balanceFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={strokeColor} stopOpacity={0.32} />
+            <stop offset="100%" stopColor={strokeColor} stopOpacity={0.02} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid stroke={chart.grid} vertical={false} />
+        <XAxis
+          dataKey="date"
+          tick={axisTick(chart)}
+          tickFormatter={(value) => formatDate(value)}
+          minTickGap={48}
+          axisLine={false}
+          tickLine={false}
+        />
+        <YAxis
+          tick={axisTick(chart)}
+          tickFormatter={(value) => `$${Math.round(value).toLocaleString()}`}
+          axisLine={false}
+          tickLine={false}
+          domain={['auto', 'auto']}
+        />
+        <Tooltip content={<BalanceChartTooltip startingBalance={start} />} />
+        {start > 0 && (
+          <ReferenceLine
+            y={start}
+            stroke={chart.tick}
+            strokeDasharray="3 3"
+            strokeOpacity={0.6}
+          />
+        )}
+        <Area
+          type="monotone"
+          dataKey="balance"
+          name="Account Balance"
+          stroke={strokeColor}
+          strokeWidth={2.5}
+          fill="url(#balanceFill)"
+        />
       </AreaChart>
     </ResponsiveContainer>
   );

@@ -37,12 +37,12 @@ function parseDate(value) {
 }
 
 /** Build a reusable Mongo filter from supported query params. */
-function buildFilters({ instrument, outcome, strategy, startDate, endDate, search }) {
+function buildFilters({ instrument, outcome, strategy, startDate, endDate, search, range }) {
   const filter = {};
 
-  if (instrument) filter.instrument = instrument;
-  if (outcome) filter.outcome = outcome;
-  if (strategy) filter.strategy = strategy;
+  if (instrument && instrument !== 'all') filter.instrument = instrument;
+  if (outcome && outcome !== 'all') filter.outcome = outcome;
+  if (strategy && strategy !== 'all') filter.strategy = strategy;
 
   const from = parseDate(startDate);
   const to = parseDate(endDate);
@@ -50,6 +50,11 @@ function buildFilters({ instrument, outcome, strategy, startDate, endDate, searc
     filter.tradeDate = {};
     if (from) filter.tradeDate.$gte = new Date(from.setHours(0, 0, 0, 0));
     if (to) filter.tradeDate.$lte = new Date(to.setHours(23, 59, 59, 999));
+  } else if (range && Number(range) > 0) {
+    const cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - Number(range));
+    cutoff.setHours(0, 0, 0, 0);
+    filter.tradeDate = { $gte: cutoff };
   }
 
   if (search && search.trim()) {

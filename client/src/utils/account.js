@@ -57,27 +57,117 @@ export function computeAccountEquity(trades = [], { startingBalance = 0, riskPer
   let totalR = 0;
   const perTrade = new Map();
 
-  for (const trade of ordered) {
+  let peakBalance = start;
+  let maxDrawdownMoney = 0;
+  let maxDrawdownPercent = 0;
+  let peakR = 0;
+  let maxDrawdownR = 0;
+
+  const winningPnls = [];
+  const losingPnls = [];
+  const winRs = [];
+  const lossRs = [];
+
+  const equityCurve = [];
+  if (ordered.length > 0) {
+    equityCurve.push({
+      date: ordered[0].tradeDate,
+      balance: round2(start),
+      pnl: 0,
+      actualR: 0,
+      netR: 0,
+      label: 'Initial',
+    });
+  }
+
+  for (let i = 0; i < ordered.length; i++) {
+    const trade = ordered[i];
     const r = toNumber(trade.actualR);
     const risk = enabled ? balance * (riskPct / 100) : 0;
     const pnl = risk * r;
     balance += pnl;
     totalPnl += pnl;
     totalR += r;
-    perTrade.set(String(trade.id || trade._id), {
+
+    if (r > 0) {
+      winningPnls.push(pnl);
+      winRs.push(r);
+    } else if (r < 0) {
+      losingPnls.push(pnl);
+      lossRs.push(r);
+    }
+
+    if (balance > peakBalance) peakBalance = balance;
+    const currentDrawdown = peakBalance - balance;
+    if (currentDrawdown > maxDrawdownMoney) maxDrawdownMoney = currentDrawdown;
+    const currentDrawdownPct = peakBalance > 0 ? (currentDrawdown / peakBalance) * 100 : 0;
+    if (currentDrawdownPct > maxDrawdownPercent) maxDrawdownPercent = currentDrawdownPct;
+
+    if (totalR > peakR) peakR = totalR;
+    const currentDrawdownR = peakR - totalR;
+    if (currentDrawdownR > maxDrawdownR) maxDrawdownR = currentDrawdownR;
+
+    const tradeId = String(trade.id || trade._id);
+    perTrade.set(tradeId, {
       riskAmount: risk,
       pnl,
       balanceAfter: balance,
       r,
     });
+
+    equityCurve.push({
+      id: tradeId,
+      date: trade.tradeDate,
+      balance: round2(balance),
+      pnl: round2(pnl),
+      actualR: round2(r),
+      netR: round2(totalR),
+      instrument: trade.instrument,
+      strategy: trade.strategy,
+      direction: trade.direction,
+      outcome: trade.outcome,
+      tradeIndex: i + 1,
+    });
   }
+
+  const grossWinsMoney = winningPnls.reduce((acc, v) => acc + v, 0);
+  const grossLossesMoney = Math.abs(losingPnls.reduce((acc, v) => acc + v, 0));
+  let profitFactorMoney = null;
+  if (grossLossesMoney > 0 && grossWinsMoney > 0) {
+    profitFactorMoney = round2(grossWinsMoney / grossLossesMoney);
+  } else if (grossLossesMoney > 0) {
+    profitFactorMoney = 0;
+  }
+
+  const avgWinMoney = winningPnls.length ? grossWinsMoney / winningPnls.length : 0;
+  const avgLossMoney = losingPnls.length ? Math.abs(losingPnls.reduce((acc, v) => acc + v, 0) / losingPnls.length) : 0;
+  const expectancyMoney = ordered.length ? totalPnl / ordered.length : 0;
+  const expectancyR = ordered.length ? totalR / ordered.length : 0;
+  const roi = start > 0 ? ((balance - start) / start) * 100 : 0;
 
   return {
     enabled,
-    currentBalance: balance,
-    totalPnl,
+    startingBalance: start,
+    currentBalance: round2(balance),
+    totalPnl: round2(totalPnl),
     totalR: round2(totalR),
+    roi: round2(roi),
     tradesCounted: ordered.length,
+    winningTradesCount: winningPnls.length,
+    losingTradesCount: losingPnls.length,
+    breakevenTradesCount: ordered.length - winningPnls.length - losingPnls.length,
+    winRate: ordered.length ? round2((winningPnls.length / ordered.length) * 100) : null,
+    maxDrawdownMoney: round2(maxDrawdownMoney),
+    maxDrawdownPercent: round2(maxDrawdownPercent),
+    maxDrawdownR: round2(maxDrawdownR),
+    avgWinMoney: round2(avgWinMoney),
+    avgLossMoney: round2(avgLossMoney),
+    avgWinR: winRs.length ? round2(winRs.reduce((a, b) => a + b, 0) / winRs.length) : null,
+    avgLossR: lossRs.length ? round2(lossRs.reduce((a, b) => a + b, 0) / lossRs.length) : null,
+    profitFactorMoney,
+    expectancyMoney: round2(expectancyMoney),
+    expectancyR: round2(expectancyR),
+    equityCurve,
     perTrade,
   };
 }
