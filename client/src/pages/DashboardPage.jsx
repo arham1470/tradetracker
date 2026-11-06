@@ -41,10 +41,10 @@ import { computeAccountEquity } from '../utils/account.js';
 /**
  * Modern Animated Dashboard — high-fidelity trading performance command center.
  * Features full filtering (Instrument, Strategy, Date Filter) with balance calculations
- * compounded across filtered trades. Defaults to showing one instrument (EURUSD).
+ * compounded across filtered trades. Defaults to showing one instrument (XAUUSD).
  */
 
-const DEFAULT_INSTRUMENT = 'EURUSD';
+const DEFAULT_INSTRUMENT = 'XAUUSD';
 
 export default function DashboardPage() {
   const [filters, setFilters] = useState({
@@ -709,6 +709,7 @@ function PageHeader({
           onChange={onFilters}
           strategies={strategies}
           showStrategy={true}
+          defaultInstrument={DEFAULT_INSTRUMENT}
           onReset={onReset}
         />
       </div>

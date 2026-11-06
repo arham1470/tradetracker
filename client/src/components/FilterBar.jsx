@@ -4,7 +4,7 @@ import { INSTRUMENTS } from '../constants/index.js';
 
 /**
  * Filter bar supporting:
- * - Instrument (default: EURUSD, or selectable pair / all)
+ * - Instrument (default: XAUUSD, or selectable pair / all)
  * - Strategy (All or specific playbook)
  * - Date Filter (Presets: All, 30D, 90D, 6M, 1Y + Custom From/To range)
  */
@@ -13,6 +13,7 @@ export default function FilterBar({
   onChange,
   strategies = [],
   showStrategy = true,
+  defaultInstrument = 'XAUUSD',
   onReset = null,
 }) {
   const [showCustomDate, setShowCustomDate] = useState(() => Boolean(filters.startDate || filters.endDate));
@@ -26,15 +27,15 @@ export default function FilterBar({
   ];
 
   const instrumentButtons = [
+    { value: 'XAUUSD', label: 'XAUUSD · Gold' },
     { value: 'EURUSD', label: 'EURUSD' },
-    { value: 'XAUUSD', label: 'XAUUSD' },
     { value: 'AUDUSD', label: 'AUDUSD' },
     { value: '', label: 'All Pairs' },
   ];
 
   const hasCustomDates = Boolean(filters.startDate || filters.endDate);
   const isFiltered =
-    (filters.instrument && filters.instrument !== 'EURUSD') ||
+    (filters.instrument !== undefined && filters.instrument !== defaultInstrument) ||
     Boolean(filters.strategy) ||
     hasCustomDates ||
     (filters.range && filters.range !== '0');
