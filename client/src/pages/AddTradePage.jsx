@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { CheckCircle2 } from 'lucide-react';
-import { TradeForm } from '../components/TradeForm.jsx';
+import { TradeForm, setLastTradeDate } from '../components/TradeForm.jsx';
 import { tradeApi, toErrorMessage } from '../services/api.js';
 import { ErrorBanner } from '../components/ui.jsx';
 
@@ -16,6 +16,9 @@ export default function AddTradePage() {
     setError(null);
     try {
       await tradeApi.createTrade(payload);
+      if (payload?.tradeDate) {
+        setLastTradeDate(payload.tradeDate);
+      }
       setSaved(true);
       // Wait a moment so the success state is visible, then go to history.
       setTimeout(() => navigate('/trades'), 600);

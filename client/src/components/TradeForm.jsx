@@ -13,6 +13,30 @@ import { strategyApi } from '../services/api.js';
  * is informational only — the server ALWAYS recomputes it.
  */
 
+export const LAST_TRADE_DATE_KEY = 'tradetracker-last-trade-date';
+
+export function getLastTradeDate() {
+  try {
+    const stored = window.localStorage.getItem(LAST_TRADE_DATE_KEY);
+    if (stored && /^\d{4}-\d{2}-\d{2}$/.test(stored)) {
+      return stored;
+    }
+  } catch {
+    /* localStorage unavailable */
+  }
+  return toDateInputValue(new Date());
+}
+
+export function setLastTradeDate(date) {
+  try {
+    if (date && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      window.localStorage.setItem(LAST_TRADE_DATE_KEY, date);
+    }
+  } catch {
+    /* localStorage unavailable */
+  }
+}
+
 export const emptyForm = {
   tradeDate: toDateInputValue(new Date()),
   instrument: 'EURUSD',
@@ -56,7 +80,12 @@ function PillGroup({ options, value, onChange, formatter = (option) => option })
 
 export function TradeForm({ initial, onSubmit, submitting, submitLabel, onCancel, compact }) {
   const [searchParams] = useSearchParams();
-  const [form, setForm] = useState(() => ({ ...emptyForm, ...(initial || {}) }));
+  const isEditing = Boolean(initial?.id || initial?._id);
+  const [form, setForm] = useState(() => ({
+    ...emptyForm,
+    tradeDate: isEditing ? (initial?.tradeDate || emptyForm.tradeDate) : getLastTradeDate(),
+    ...(initial || {}),
+  }));
   const [strategies, setStrategies] = useState([]);
   const [loadingStrategies, setLoadingStrategies] = useState(true);
   const [customMode, setCustomMode] = useState(false);
@@ -86,10 +115,14 @@ export function TradeForm({ initial, onSubmit, submitting, submitLabel, onCancel
     };
   }, [searchParams, initial?.strategy]);
 
-  const setField = (field) => (event) => setForm((prev) => ({ ...prev, [field]: event.target.value }));
+  const setField = (field) => (event) => {
+    const val = event.target.value;
+    if (field === 'tradeDate' && !isEditing && val) {
+      setLastTradeDate(val);
+    }
+    setForm((prev) => ({ ...prev, [field]: val }));
+  };
   const setSelect = (field) => (value) => setForm((prev) => ({ ...prev, [field]: value }));
-
-  const isEditing = Boolean(initial?.id || initial?._id);
 
   // Selected strategy object (for rule/details preview)
   const selectedStrategy = useMemo(() => {
@@ -115,6 +148,10 @@ export function TradeForm({ initial, onSubmit, submitting, submitLabel, onCancel
   const handleSubmit = (event) => {
     event.preventDefault();
     const strategyTrimmed = form.strategy.trim();
+
+    if (!isEditing && form.tradeDate) {
+      setLastTradeDate(form.tradeDate);
+    }
 
     // Auto-create strategy in background if entered as a new custom strategy
     if (
@@ -177,7 +214,25 @@ export function TradeForm({ initial, onSubmit, submitting, submitLabel, onCancel
         <h2 className={headingClass}>Setup</h2>
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           <div>
-            <label className="label" htmlFor="tradeDate">Trade date *</label>
+            <div className="flex items-center justify-between">
+              <label className="label" htmlFor="tradeDate">Trade date *</label>
+              {form.tradeDate !== toDateInputValue(new Date()) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const today = toDateInputValue(new Date());
+                    setForm((prev) => ({ ...prev, tradeDate: today }));
+                    if (!isEditing) {
+                      setLastTradeDate(today);
+                    }
+                  }}
+                  className="text-[11px] font-medium text-accent hover:underline"
+                  title="Reset date to today"
+                >
+                  Today
+                </button>
+              )}
+            </div>
             <input id="tradeDate" type="date" className="input" value={form.tradeDate} onChange={setField('tradeDate')} required />
           </div>
           <div>
